@@ -24,15 +24,26 @@ Deep sleep power management with GPIO button wake-up. Demonstrates ultra-low pow
 - Wake-up reason detection
 
 ### [example-factory-reset](./example-factory-reset/)
-Factory reset functionality that erases all NVS storage when a button is held for 5 seconds. Features a persistent counter that increments every second.
+Factory reset functionality with deep sleep power management. Press and hold button for 5 seconds during wake-up to erase NVS. Features a persistent counter that increments on each wake-up.
 
 **Features:**
+- Deep sleep mode (~10-150 µA current consumption)
 - Auto-incrementing counter stored in NVS
-- Counter persists across reboots
-- Long-press detection (5 seconds)
+- Counter persists across reboots and sleep cycles
+- Wakes every 10 seconds OR on button press
+- Long-press detection (5 seconds) on wake-up
 - Complete NVS flash erase
-- Progress countdown display
-- Simple demonstration of NVS read/write operations
+- Simple demonstration of NVS + deep sleep
+
+### [example-wifi-qrcode](./example-wifi-qrcode/)
+WiFi QR Code generator that displays a scannable QR code in the serial monitor. Generates QR codes from WiFi credentials (SSID, password, security type) that can be scanned by smartphones to connect automatically.
+
+**Features:**
+- Generates WiFi QR codes using standard format
+- Displays QR code in serial monitor with ASCII/Unicode blocks
+- Supports WPA, WEP, and open network security
+- Configurable QR code version and error correction
+- Works with most smartphone camera apps
 
 
 ## Usage
