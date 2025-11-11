@@ -23,6 +23,18 @@ Deep sleep power management with GPIO button wake-up. Demonstrates ultra-low pow
 - Boot counter with RTC memory
 - Wake-up reason detection
 
+### [example-factory-reset](./example-factory-reset/)
+Factory reset functionality that erases all NVS storage when a button is held for 5 seconds. Features a persistent counter that increments every second.
+
+**Features:**
+- Auto-incrementing counter stored in NVS
+- Counter persists across reboots
+- Long-press detection (5 seconds)
+- Complete NVS flash erase
+- Progress countdown display
+- Simple demonstration of NVS read/write operations
+
+
 ## Usage
 
 Each example is a complete, standalone PlatformIO project. Navigate to any example directory and run:
