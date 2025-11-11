@@ -80,7 +80,7 @@ pio device monitor
 
 ### Example 3: Factory Reset
 
-Factory reset functionality with NVS storage and deep sleep. Press and hold button for 5 seconds to erase.
+Factory reset functionality with NVS storage and deep sleep. Hold GPIO 26 button while resetting to erase NVS.
 
 ```bash
 # Build and upload
@@ -93,10 +93,18 @@ pio device monitor
 **Features:**
 - Deep sleep mode (~10-150 µA)
 - Auto-incrementing counter in NVS
-- Counter persists across reboots
-- Wakes every 10 seconds OR on button press
-- Long-press detection (5 seconds)
+- Counter persists across reboots and resets
+- Wakes every 10 seconds OR on GPIO 2 button press
+- Long-press detection (5 seconds) for factory reset
 - Complete NVS flash erase
+
+**How to Factory Reset:**
+1. Hold GPIO 2 button
+2. Press the physical reset button (while still holding GPIO 26)
+3. Keep holding GPIO 26 for 5 seconds after boot starts
+4. NVS will be erased and counter resets to 0
+
+**Note:** The physical reset button alone will NOT erase NVS. NVS is non-volatile storage designed to persist across resets. You must hold GPIO 26 during boot to trigger factory reset.
 
 📄 [Detailed documentation](./example-factory-reset/)
 

@@ -4,7 +4,7 @@
 #include <esp_sleep.h>
 
 // Reset button GPIO
-const gpio_num_t RESET_BUTTON_GPIO = GPIO_NUM_26;
+const gpio_num_t RESET_BUTTON_GPIO = GPIO_NUM_2;
 
 // Hold duration in milliseconds to trigger factory reset
 const unsigned long HOLD_DURATION_MS = 5000;
@@ -111,7 +111,7 @@ void performFactoryReset() {
 bool checkFactoryResetButton() {
     // Check if button is currently pressed
     if (digitalRead(RESET_BUTTON_GPIO) == LOW) {
-        Serial.println("🔵 Reset button detected on wake-up!");
+        Serial.println("🔵 Reset button detected!");
         Serial.println("   Hold button for 5 seconds to factory reset...");
 
         unsigned long startTime = millis();
@@ -204,7 +204,6 @@ void goToSleep() {
     Serial.printf("   Will wake in %d seconds or when button is pressed\n", SLEEP_DURATION_SEC);
     Serial.println("   Hold button for 5 seconds during wake to factory reset!");
     Serial.println("=================================\n");
-    Serial.flush(); // Wait for serial to finish
     delay(100);
 
     // Enter deep sleep
@@ -223,6 +222,20 @@ void setup() {
     Serial.println("🏭 ESP32 NVS Counter Demo");
     Serial.println("🏭 ================================\n");
 
+    // Configure reset button EARLY, before anything else
+    pinMode(RESET_BUTTON_GPIO, INPUT_PULLUP);
+    Serial.printf("✅ Reset button configured on GPIO %d\n", RESET_BUTTON_GPIO);
+
+    // **CHECK FOR FACTORY RESET ON EVERY BOOT**
+    // This works for both wake-up from deep sleep AND hard reset
+    if (checkFactoryResetButton()) {
+        // Initialize NVS before factory reset
+        nvs_flash_init();
+        // Button was held for 5 seconds, perform factory reset
+        performFactoryReset();
+        // Note: performFactoryReset() calls ESP.restart(), so we never reach here
+    }
+
     // Print wakeup reason
     printWakeupReason();
 
@@ -240,19 +253,9 @@ void setup() {
         Serial.println("✅ NVS initialized successfully");
     }
 
-    // Configure reset button
-    pinMode(RESET_BUTTON_GPIO, INPUT_PULLUP);
-    Serial.printf("✅ Reset button configured on GPIO %d\n", RESET_BUTTON_GPIO);
-
     // Show current NVS status
     showNVSStats();
 
-    // **CHECK FOR FACTORY RESET ON WAKE-UP**
-    if (checkFactoryResetButton()) {
-        // Button was held for 5 seconds, perform factory reset
-        performFactoryReset();
-        // Note: performFactoryReset() calls ESP.restart(), so we never reach here
-    }
 
     // Load counter from NVS
     counter = readCounterFromNVS();
