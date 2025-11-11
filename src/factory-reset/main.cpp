@@ -4,7 +4,7 @@
 #include <esp_sleep.h>
 
 // Reset button GPIO
-const gpio_num_t RESET_BUTTON_GPIO = GPIO_NUM_1;
+const gpio_num_t RESET_BUTTON_GPIO = GPIO_NUM_26;
 
 // Hold duration in milliseconds to trigger factory reset
 const unsigned long HOLD_DURATION_MS = 5000;
