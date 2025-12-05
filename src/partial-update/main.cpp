@@ -5,7 +5,7 @@
 #include "bitmaps/Bitmaps800x480.h" // 7.5"  b/w
 #include "bitmaps/Bitmaps168x384.h"
 
-#define PIN_EPD_PWR 9
+#define PIN_EPD_PWR 10
 RTC_DATA_ATTR int initCount = 0;
 
 #ifdef BOARD_ESP32_C3
@@ -28,7 +28,7 @@ void initDisplay() {
     display.init(115200, initial, 10, false);
     // display.init(115200, true, 10, false);
 
-    Serial.printf( "Display init: initCount=%d initial=%d \n", initCount, initial);
+    Serial.printf( "Display init: initCount=%d initial=%s \n", initCount, initial ? "true" : "false");
 
     u8g2.begin(display);
     u8g2.setFontMode(1); // Use u8g2 transparent mode
@@ -41,6 +41,7 @@ void initDisplay() {
 
 void powerOff() {
     display.hibernate();
+    // display.powerOff();
     digitalWrite(PIN_EPD_PWR, LOW); // Power off the display
 }
 
