@@ -8,17 +8,27 @@
 #define PIN_EPD_PWR 9
 RTC_DATA_ATTR int initCount = 0;
 
-// GxEPD2_750_GDEY075T7 epd(/*cs=*/ 3, /*dc=*/ 9, /*rst=*/ 8, /*busy=*/ 2);
+#ifdef BOARD_ESP32_C3
+GxEPD2_750_GDEY075T7 epd(/*cs=*/ 3, /*dc=*/ 9, /*rst=*/ 8, /*busy=*/ 2);
+#elif defined(BOARD_ESP32_S3)
 GxEPD2_750_GDEY075T7 epd(/*cs=*/ 44, /*dc=*/ 10, /*rst=*/ 38, /*busy=*/ 4);
+#else
+#error "Board not defined! Please specify board type in platformio.ini"
+#endif
+
 GxEPD2_BW<GxEPD2_750_GDEY075T7, GxEPD2_750_GDEY075T7::HEIGHT> display(epd);
 U8G2_FOR_ADAFRUIT_GFX u8g2;
 
-int initDisplay() {
-    bool initial = initCount == 0;
-    initCount++;
+static const char* TAG = "TIMING_MGR";
+
+void initDisplay() {
+    bool initial = initCount == 1;
     pinMode(PIN_EPD_PWR, OUTPUT);
     digitalWrite(PIN_EPD_PWR, HIGH);
-    display.init(115200, initial, 2, false);
+    display.init(115200, initial, 10, false);
+    // display.init(115200, true, 10, false);
+
+    Serial.printf( "Display init: initCount=%d initial=%d \n", initCount, initial);
 
     u8g2.begin(display);
     u8g2.setFontMode(1); // Use u8g2 transparent mode
@@ -27,7 +37,6 @@ int initDisplay() {
     u8g2.setForegroundColor(GxEPD_BLACK);
     u8g2.setBackgroundColor(GxEPD_WHITE);
 
-    return initCount;
 }
 
 void powerOff() {
@@ -36,14 +45,16 @@ void powerOff() {
 }
 
 void deepSleep() {
-    uint64_t sleepDuration = 0.1 * 60ULL; // ~6s
+    uint64_t sleepDuration = 0.1 * 30ULL; // ~3s
     esp_sleep_enable_timer_wakeup(sleepDuration * 1000000ULL);
     esp_deep_sleep_start();
 }
 
 void setup()
 {
-    int wakeups = initDisplay();
+    delay(5000);
+    initCount++;
+    initDisplay();
 
     String hello = "ÄÖÜäöüHelloWorld";
     uint16_t textWidth = u8g2.getUTF8Width(hello.c_str());
@@ -53,7 +64,7 @@ void setup()
     //Font size: width=76, ascent=11, descent=-3, totalHeight=14
     Serial.printf("Font size: width=%u, ascent=%u, descent=%d, totalHeight=%u\n", textWidth, fontAscent, fontDescent, totalHeight);
 
-    if (wakeups == 1) {
+    if (initCount == 1) {
         display.firstPage();
         do {
             display.fillScreen(GxEPD_WHITE);
@@ -64,11 +75,13 @@ void setup()
         display.setPartialWindow(0, 0, textWidth, totalHeight);
         display.firstPage();
         do {
-            display.fillScreen(GxEPD_WHITE);
+            // Clear only the partial window area, not the entire screen
+            display.fillRect(0, 0, textWidth, totalHeight, GxEPD_WHITE);
             u8g2.setCursor(0, fontAscent );
             u8g2.print(hello.c_str());
         } while (display.nextPage());
     }
+
     powerOff();
     deepSleep();
 }
