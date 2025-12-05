@@ -3,14 +3,12 @@
 #include <U8g2_for_Adafruit_GFX.h>
 #include <gdey/GxEPD2_750_GDEY075T7.h>  // Specific driver for GDEY075T7
 #include "bitmaps/Bitmaps800x480.h" // 7.5"  b/w
-#include "bitmaps/Bitmaps168x384.h"
-
-#define PIN_EPD_PWR 10
-RTC_DATA_ATTR int initCount = 0;
 
 #ifdef BOARD_ESP32_C3
+#define PIN_EPD_PWR 9
 GxEPD2_750_GDEY075T7 epd(/*cs=*/ 3, /*dc=*/ 9, /*rst=*/ 8, /*busy=*/ 2);
 #elif defined(BOARD_ESP32_S3)
+#define PIN_EPD_PWR 10
 GxEPD2_750_GDEY075T7 epd(/*cs=*/ 44, /*dc=*/ 10, /*rst=*/ 38, /*busy=*/ 4);
 #else
 #error "Board not defined! Please specify board type in platformio.ini"
@@ -19,14 +17,15 @@ GxEPD2_750_GDEY075T7 epd(/*cs=*/ 44, /*dc=*/ 10, /*rst=*/ 38, /*busy=*/ 4);
 GxEPD2_BW<GxEPD2_750_GDEY075T7, GxEPD2_750_GDEY075T7::HEIGHT> display(epd);
 U8G2_FOR_ADAFRUIT_GFX u8g2;
 
+RTC_DATA_ATTR int initCount = 0;
+
 static const char* TAG = "TIMING_MGR";
 
 void initDisplay() {
     bool initial = initCount == 1;
     pinMode(PIN_EPD_PWR, OUTPUT);
     digitalWrite(PIN_EPD_PWR, HIGH);
-    display.init(115200, initial, 10, false);
-    // display.init(115200, true, 10, false);
+    display.init(115200, initial, 2, false);
 
     Serial.printf( "Display init: initCount=%d initial=%s \n", initCount, initial ? "true" : "false");
 
