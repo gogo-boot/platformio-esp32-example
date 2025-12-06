@@ -8,7 +8,6 @@
 #define PIN_EPD_PWR 9
 GxEPD2_750_GDEY075T7 epd(/*cs=*/ 3, /*dc=*/ 9, /*rst=*/ 8, /*busy=*/ 2);
 #elif defined(BOARD_ESP32_S3)
-#define PIN_EPD_PWR 10
 GxEPD2_750_GDEY075T7 epd(/*cs=*/ 44, /*dc=*/ 10, /*rst=*/ 38, /*busy=*/ 4);
 #else
 #error "Board not defined! Please specify board type in platformio.ini"
@@ -17,32 +16,9 @@ GxEPD2_750_GDEY075T7 epd(/*cs=*/ 44, /*dc=*/ 10, /*rst=*/ 38, /*busy=*/ 4);
 GxEPD2_BW<GxEPD2_750_GDEY075T7, GxEPD2_750_GDEY075T7::HEIGHT> display(epd);
 U8G2_FOR_ADAFRUIT_GFX u8g2;
 
-RTC_DATA_ATTR int initCount = 0;
+RTC_DATA_ATTR int bootCount = 0;
 
 static const char* TAG = "TIMING_MGR";
-
-void initDisplay() {
-    bool initial = initCount == 1;
-    pinMode(PIN_EPD_PWR, OUTPUT);
-    digitalWrite(PIN_EPD_PWR, HIGH);
-    display.init(115200, initial, 2, false);
-
-    Serial.printf( "Display init: initCount=%d initial=%s \n", initCount, initial ? "true" : "false");
-
-    u8g2.begin(display);
-    u8g2.setFontMode(1); // Use u8g2 transparent mode
-    u8g2.setFont(u8g2_font_helvB10_tf); 
-    u8g2.setFontDirection(0); // Left to right
-    u8g2.setForegroundColor(GxEPD_BLACK);
-    u8g2.setBackgroundColor(GxEPD_WHITE);
-
-}
-
-void powerOff() {
-    display.hibernate();
-    // display.powerOff();
-    digitalWrite(PIN_EPD_PWR, LOW); // Power off the display
-}
 
 void deepSleep() {
     uint64_t sleepDuration = 0.1 * 30ULL; // ~3s
@@ -50,11 +26,12 @@ void deepSleep() {
     esp_deep_sleep_start();
 }
 
-void setup()
-{
-    delay(5000);
-    initCount++;
-    initDisplay();
+void partial_update() {
+    u8g2.setFontMode(1); // Use u8g2 transparent mode
+    u8g2.setFont(u8g2_font_helvB10_tf);
+    u8g2.setFontDirection(0); // Left to right
+    u8g2.setForegroundColor(GxEPD_BLACK);
+    u8g2.setBackgroundColor(GxEPD_WHITE);
 
     String hello = "ÄÖÜäöüHelloWorld";
     uint16_t textWidth = u8g2.getUTF8Width(hello.c_str());
@@ -64,27 +41,50 @@ void setup()
     //Font size: width=76, ascent=11, descent=-3, totalHeight=14
     Serial.printf("Font size: width=%u, ascent=%u, descent=%d, totalHeight=%u\n", textWidth, fontAscent, fontDescent, totalHeight);
 
-    if (initCount == 1) {
+    display.setPartialWindow(0, 0, textWidth, totalHeight);
+    display.firstPage();
+    do {
+        // Clear only the partial window area, not the entire screen
+        // display.fillRect(0, 0, textWidth, totalHeight, GxEPD_WHITE);
+        display.fillScreen(GxEPD_WHITE);
+        u8g2.setCursor(0, fontAscent );
+        u8g2.print(hello.c_str());
+    } while (display.nextPage());
+}
+
+void setup()
+{
+    Serial.begin(115200);
+    delay(2000);
+    u8g2.begin(display);
+
+    bootCount++;
+
+    bool initial = bootCount == 1;
+    display.init(115200, initial, 10, false);
+    Serial.printf( "Display init: bootCount=%d display re-init=%s \n", bootCount, initial ? "true" : "false");
+
+    if (bootCount == 1) {
         display.firstPage();
         do {
             display.fillScreen(GxEPD_WHITE);
             display.drawBitmap(0, 0, Bitmap800x480_2, 800, 480, GxEPD_BLACK);
         } while (display.nextPage());
     } else {
-
-        display.setPartialWindow(0, 0, textWidth, totalHeight);
-        display.firstPage();
-        do {
-            // Clear only the partial window area, not the entire screen
-            display.fillRect(0, 0, textWidth, totalHeight, GxEPD_WHITE);
-            u8g2.setCursor(0, fontAscent );
-            u8g2.print(hello.c_str());
-        } while (display.nextPage());
+        partial_update();
     }
 
-    powerOff();
+    display.powerOff();
+
+    // after deep sleep, setup() will be called again
+    // if you want to test without deep sleep, comment the next line
     deepSleep();
 }
 
-void loop() {}
+void loop() {
+    // When device doesn't deep sleep, loop() runs
+    // It works fine for partial update
+    partial_update();
+    delay(3000);
+}
 
